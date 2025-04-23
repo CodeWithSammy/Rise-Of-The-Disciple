@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BookOpen, Send, Brain } from 'lucide-react';
-import { mockArchitectMessages } from '@/lib/mock-data';
+import { mockArchitectMessages as rawMessages } from '@/lib/mock-data';
 
 interface Message {
   id: string;
@@ -14,41 +14,45 @@ interface Message {
   timestamp: Date;
 }
 
+// 🛡️ Sanitize sender type from raw mock data
+const sanitizeMessages = (msgs: any[]): Message[] =>
+  msgs.map((m) => ({
+    ...m,
+    sender: m.sender === 'user' || m.sender === 'architect' ? m.sender : 'architect',
+    timestamp: new Date(m.timestamp), // ensure timestamp is Date object
+  }));
+
 export function ArchitectChat() {
-  const [messages, setMessages] = useState<Message[]>(mockArchitectMessages);
+  const [messages, setMessages] = useState<Message[]>(sanitizeMessages(rawMessages));
   const [newMessage, setNewMessage] = useState('');
-  
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newMessage.trim()) return;
-    
-    // Add user message
+
     const userMessage: Message = {
       id: `m${messages.length + 1}`,
       sender: 'user',
       content: newMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
+
     setMessages([...messages, userMessage]);
     setNewMessage('');
-    
-    // Simulate Architect response
+
     setTimeout(() => {
       const architectResponse: Message = {
         id: `m${messages.length + 2}`,
         sender: 'architect',
         content: getArchitectResponse(newMessage),
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      
-      setMessages(prev => [...prev, architectResponse]);
+
+      setMessages((prev) => [...prev, architectResponse]);
     }, 1000);
   };
-  
+
   const getArchitectResponse = (msg: string): string => {
-    // Simple response logic - in a real app this would connect to GPT API
     if (msg.toLowerCase().includes('quest')) {
       return "I've created a new custom quest for you: 'Master the Frontend'. Complete it to earn 100 XP for your Coding skill.";
     } else if (msg.toLowerCase().includes('bible') || msg.toLowerCase().includes('verse')) {
@@ -59,7 +63,7 @@ export function ArchitectChat() {
       return "I'm here to guide your growth journey. Ask me about creating custom quests, getting advice for your skills, or generating challenges to test your abilities.";
     }
   };
-  
+
   return (
     <Card className="bg-black bg-opacity-70 border border-purple-900 h-[calc(100vh-300px)] flex flex-col">
       <CardHeader className="pb-2">
@@ -90,7 +94,7 @@ export function ArchitectChat() {
             </div>
           ))}
         </div>
-        
+
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
           <Input
             value={newMessage}
